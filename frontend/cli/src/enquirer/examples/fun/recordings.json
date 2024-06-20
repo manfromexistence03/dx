@@ -1,0 +1,36 @@
+{
+  "flavor": [
+    {
+      "keypress": [
+        null,
+        {
+          "name": "down",
+          "ctrl": false,
+          "meta": false,
+          "shift": false,
+          "option": false,
+          "sequence": "\u001b[B",
+          "raw": "",
+          "code": "[B",
+          "action": "down"
+        }
+      ],
+      "interval": 4504
+    },
+    {
+      "keypress": [
+        "\r",
+        {
+          "name": "return",
+          "ctrl": false,
+          "meta": false,
+          "shift": false,
+          "option": false,
+          "sequence": "\r",
+          "action": "submit"
+        }
+      ],
+      "interval": 1651
+    }
+  ]
+}

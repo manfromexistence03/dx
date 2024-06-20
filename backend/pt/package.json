@@ -1,0 +1,98 @@
+{
+  "name": "pymport",
+  "version": "1.5.1",
+  "description": "Use Python libraries from Node.js",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/mmomtchev/pymport.git"
+  },
+  "main": "lib/index.js",
+  "types": "lib/index.d.ts",
+  "exports": {
+    ".": {
+      "import": "./lib/index.mjs",
+      "require": "./lib/index.js"
+    },
+    "./array": "./array/index.js",
+    "./proxified": "./proxified/index.js"
+  },
+  "keywords": [
+    "python",
+    "node.js",
+    "import",
+    "require",
+    "compatibility",
+    "scipy",
+    "numpy",
+    "pandas",
+    "graph_tool",
+    "matplotlib"
+  ],
+  "author": "Momtchil Momtchev <momtchil@momtchev.com>",
+  "license": "ISC",
+  "bugs": {
+    "url": "https://github.com/mmomtchev/pymport/issues"
+  },
+  "homepage": "https://github.com/mmomtchev/pymport#readme",
+  "bin": {
+    "pympip": "./scripts/pympip",
+    "pympip3": "./scripts/pympip"
+  },
+  "binary": {
+    "module_name": "pymport",
+    "module_path": "./lib/binding/{platform}-{arch}",
+    "remote_path": "v{version}",
+    "host": "https://github.com/mmomtchev/pymport/releases/download/",
+    "package_name": "{platform}-{arch}.tar.gz",
+    "hosting": {
+      "provider": "github",
+      "repo": "mmomtchev/pymport"
+    }
+  },
+  "scripts": {
+    "install": "node-pre-gyp install --fallback-to-build && node scripts/patch-prefix.js",
+    "test": "mocha",
+    "doc": "npx documentation readme --readme-file wiki/API.md  --section API --config=documentation.yml lib/*.d.ts",
+    "wiki": "cd wiki && git add API.md && git diff-index --quiet HEAD || git commit -m 'update API'",
+    "wiki:sidebar": "cd wiki && github-wiki-sidebar --silent",
+    "build": "npx node-pre-gyp configure && npx node-pre-gyp build",
+    "lint": "clang-format -i src/*.cc src/*.h && eslint lib/*.[tj]s test/*.[tj]s",
+    "gcov": "mkdir -p coverage && cd coverage && gcov -o ../build/Debug/obj.target/pymport/src ../src/*",
+    "lcov": "npx c8 report --reporter=text-lcov > coverage/tests.lcov",
+    "codecov": "cd coverage && curl -s https://codecov.io/bash | bash",
+    "preversion": "npm run lint && npm run test && npm run doc && npm run wiki && git add wiki",
+    "postversion": "git push && git push --tags && node ./scripts/publish-packages.js",
+    "postpublish": "gh workflow run test-package.yml -F version=$npm_package_version",
+    "bench": "node bench/bench.js"
+  },
+  "devDependencies": {
+    "@types/chai": "^4.3.11",
+    "@types/chai-spies": "^1.0.6",
+    "@types/mocha": "^10.0.6",
+    "@types/node": "^20.11.17",
+    "@typescript-eslint/eslint-plugin": "^7.5.0",
+    "@typescript-eslint/parser": "^7.5.0",
+    "async-await-queue": "^2.1.4",
+    "benny": "^3.7.1",
+    "chai": "^4.4.0",
+    "chai-spies": "^1.1.0",
+    "documentation": "^14.0.0",
+    "eslint": "^8.57.0",
+    "eslint-plugin-array-func": "^5.0.1",
+    "eslint-plugin-mocha": "^10.4.1",
+    "eslint-plugin-prefer-arrow": "^1.2.3",
+    "mocha": "^10.1.0",
+    "node-gyp": "^10.0.1",
+    "ts-node": "^10.9.2",
+    "tsconfig-paths": "^4.1.2",
+    "typescript": "^5.3.3"
+  },
+  "engines": {
+    "node": ">= 16.0.0"
+  },
+  "dependencies": {
+    "@mapbox/node-pre-gyp": "^1.0.11",
+    "@mmomtchev/node-pre-gyp-github": "^2.0.6",
+    "node-addon-api": "^8.0.0"
+  }
+}

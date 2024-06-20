@@ -1,0 +1,42 @@
+name: Test release
+
+on:
+  release:
+    types: [published]
+
+  workflow_dispatch:
+
+env:
+  BUILTIN_PYTHON_VERSION: 3.12.2
+
+jobs:
+  test_published:
+    runs-on: ${{ matrix.platform }}
+
+    strategy:
+      matrix:
+        platform:
+          - ubuntu-20.04
+          - ubuntu-22.04
+          - windows-2019
+          - windows-2022
+          - macos-11
+          - macos-12
+        node-version: [16.x, 18.x, 20.x, 21.x]
+        python-version: ["3.8", "3.9", "3.10", "3.11", "3.12"]
+
+    steps:
+      - uses: actions/checkout@v4
+      - name: Use Node.js ${{ matrix.node-version }}
+        uses: actions/setup-node@v4
+        with:
+          node-version: ${{ matrix.node-version }}
+      - uses: actions/setup-python@v5
+        with:
+          python-version: ${{ matrix.python-version }}
+      - run: npm install --ignore-scripts
+      - run: npx @mapbox/node-pre-gyp install
+      - run: node ./scripts/pympip install --upgrade pip
+      - run: node ./scripts/pympip install -r test/requirements.txt
+      - name: Run unit tests
+        run: npm test

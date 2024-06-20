@@ -1,0 +1,151 @@
+name: Test npm package
+
+on:
+  workflow_dispatch:
+    inputs:
+      version:
+        description: "Package version to test"
+        required: true
+
+env:
+  BUILTIN_PYTHON_VERSION: 3.12.2
+
+jobs:
+  test_npm_binaries:
+    runs-on: ${{ matrix.platform }}
+
+    strategy:
+      fail-fast: false
+      matrix:
+        platform:
+          - ubuntu-20.04
+          - ubuntu-22.04
+          - windows-2019
+          - windows-2022
+          - macos-11
+          - macos-12
+        node-version: [16.x, 18.x, 20.x]
+        python-version: ["3.8", "3.9", "3.10", "3.11", "3.12"]
+
+    steps:
+      - name: Use Node.js ${{ matrix.node-version }}
+        uses: actions/setup-node@v4
+        with:
+          node-version: ${{ matrix.node-version }}
+      - uses: actions/setup-python@v5
+        with:
+          python-version: ${{ matrix.python-version }}
+      - name: Create package.json
+        run: npm init --yes
+      - name: Set up the unit tests
+        run: |
+          curl https://codeload.github.com/mmomtchev/pymport/zip/refs/tags/v${{ github.event.inputs.version }} --output repo.zip
+          unzip repo.zip
+          mv pymport-${{ github.event.inputs.version }}/test .
+      - name: Install dependencies
+        run: |
+          npm i @types/chai@4 @types/mocha @types/node chai@4 chai-spies @types/chai-spies mocha ts-node typescript
+      - name: Install pymport from npm
+        run: npm install pymport@${{ github.event.inputs.version }}
+      - run: npx pympip3 install -r test/requirements.txt
+      - name: Run the unit tests
+        run: |
+          cd test
+          npx mocha --reporter=tap -r ts-node/register -r ./_init.ts --timeout 20000 --v8-expose-gc *.test.ts *.test.cjs *.test.mjs
+        env:
+          TS_NODE_PROJECT: tsconfig.test.json
+      - name: Test rebuilding a Python package
+        run: |
+          npx pympip3 install --no-binary :all: xxhash
+          node -e "require('pymport').pymport('xxhash')" || true
+
+  test_npm_rebuild:
+    runs-on: ${{ matrix.platform }}
+
+    strategy:
+      fail-fast: false
+      matrix:
+        platform: [ubuntu-20.04, ubuntu-22.04, windows-2019, macos-11]
+        node-version: [16.x, 18.x, 20.x]
+        python-version: ["3.8", "3.9", "3.10", "3.11", "3.12"]
+        exclude:
+          - node-version: 16.x
+            platform: ubuntu-22.04
+          - node-version: 16.x
+            python-version: 3.12
+
+    steps:
+      - name: Use Node.js ${{ matrix.node-version }}
+        uses: actions/setup-node@v4
+        with:
+          node-version: ${{ matrix.node-version }}
+      - uses: actions/setup-python@v5
+        with:
+          python-version: ${{ matrix.python-version }}
+      - name: Create package.json
+        run: npm init --yes
+      - name: Set up the unit tests
+        run: |
+          curl https://codeload.github.com/mmomtchev/pymport/zip/refs/tags/v${{ github.event.inputs.version }} --output repo.zip
+          unzip repo.zip
+          mv pymport-${{ github.event.inputs.version }}/test .
+      - name: Install dependencies
+        run: |
+          npm i @types/chai@4 @types/mocha @types/node chai@4 chai-spies @types/chai-spies mocha ts-node typescript
+      - name: Install pymport from npm
+        run: npm install pymport@${{ github.event.inputs.version }} --build-from-source
+      - run: pip3 install -r test/requirements.txt
+      - name: Run the unit tests
+        run: |
+          cd test
+          npx mocha --reporter=tap -r ts-node/register -r ./_init.ts --timeout 20000 --v8-expose-gc *.test.ts *.test.cjs *.test.mjs
+        env:
+          TS_NODE_PROJECT: tsconfig.test.json
+      - name: Test rebuilding a Python package
+        run: |
+          pip3 install --no-binary :all: xxhash
+          node -e "require('pymport').pymport('xxhash')"
+
+  test_npm_rebuild_external:
+    runs-on: ${{ matrix.platform }}
+
+    strategy:
+      fail-fast: false
+      matrix:
+        platform: [ubuntu-latest, macos-11]
+
+    steps:
+      - name: Use Node.js 18.x
+        uses: actions/setup-node@v4
+        with:
+          node-version: 18.x
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+      - name: set LIBS
+        run: echo LIBS=`pkg-config --libs python3-embed` >> $GITHUB_ENV
+      - name: set CXXFLAGS
+        run: echo CXXFLAGS=`pkg-config --cflags python3-embed` >> $GITHUB_ENV
+      - name: Create package.json
+        run: npm init --yes
+      - name: Set up the unit tests
+        run: |
+          curl https://codeload.github.com/mmomtchev/pymport/zip/refs/tags/v${{ github.event.inputs.version }} --output repo.zip
+          unzip repo.zip
+          mv pymport-${{ github.event.inputs.version }}/test .
+      - name: Install dependencies
+        run: |
+          npm i @types/chai@4 @types/mocha @types/node chai@4 chai-spies @types/chai-spies mocha ts-node typescript
+      - name: Install pymport from npm
+        run: npm install pymport@${{ github.event.inputs.version }} --build-from-source --external_python
+      - run: pip3 install -r test/requirements.txt
+      - name: Run the unit tests
+        run: |
+          cd test
+          npx mocha --reporter=tap -r ts-node/register -r ./_init.ts --timeout 20000 --v8-expose-gc *.test.ts *.test.cjs *.test.mjs
+        env:
+          TS_NODE_PROJECT: tsconfig.test.json
+      - name: Test rebuilding a Python package
+        run: |
+          pip3 install --no-binary :all: xxhash
+          node -e "require('pymport').pymport('xxhash')"

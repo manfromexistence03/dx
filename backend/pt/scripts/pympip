@@ -1,0 +1,23 @@
+#!/usr/bin/env node
+const path = require('path');
+const fs = require('fs');
+const cp = require('child_process');
+const os = require('os');
+
+const bin_dir = path.resolve(path.dirname(
+  require('@mapbox/node-pre-gyp').find(path.join(__dirname, '..', 'package.json'))));
+const exe = os.platform() === 'win32' ? 'python.exe' : path.join('bin', 'python3');
+const python = path.join(bin_dir, exe);
+if (fs.existsSync(python)) {
+  cp.spawnSync(python, ['-m', 'pip', ...process.argv.slice(2)], {
+    stdio: 'inherit',
+    env: {
+      ...process.env,
+      PYTHONHOME: bin_dir
+    }
+  });
+} else {
+  console.error('You don\'t appear to have the pymport built-in Python environment installed: ',
+    python);
+  process.exit(1);
+}

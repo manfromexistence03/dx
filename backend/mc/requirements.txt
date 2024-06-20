@@ -1,0 +1,4 @@
+fire
+sentencepiece
+xformers
+simple-parsing

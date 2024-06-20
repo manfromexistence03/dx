@@ -1,0 +1,32 @@
+name: Github packages publish
+
+on: workflow_dispatch
+
+env:
+  BUILTIN_PYTHON_VERSION: 3.12.2
+
+jobs:
+  publish:
+    runs-on: ${{ matrix.platform }}
+    
+    strategy:
+      matrix:
+        platform: [ubuntu-20.04, windows-2019, macos-11]
+
+    steps:
+      - uses: actions/checkout@v4
+      - name: Use Node.js 16.x
+        uses: actions/setup-node@v4
+        with:
+          node-version: 16.x
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+      - run: npm install --ignore-scripts
+      - run: npx @mapbox/node-pre-gyp configure --builtin_python=true
+      - run: npx @mapbox/node-pre-gyp build -j max
+      - run: node scripts/pympip install setuptools==69.0.3
+      - run: npx @mapbox/node-pre-gyp package
+      - run: npx @mmomtchev/node-pre-gyp-github publish
+        env:
+          NODE_PRE_GYP_GITHUB_TOKEN: ${{ secrets.NODE_PRE_GYP_GITHUB_TOKEN }}
